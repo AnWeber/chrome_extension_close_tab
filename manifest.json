@@ -13,7 +13,7 @@
       "48": "images/tab_close_48.png",
       "128": "images/tab_close_128.png"
     },
-    "default_title": "Press Ctrl(Win)/Command(Mac)+Shift+ Left or Right to Flip Tabs"
+    "default_title": "Close Tabs"
   },
   "permissions": [
     "tabs"
