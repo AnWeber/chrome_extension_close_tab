@@ -12,7 +12,7 @@ chrome.commands.onCommand.addListener(async (command) => {
     }
 });
 
-chrome.action.onClicked.addListener(async function (tab) {
+chrome.action.onClicked.addListener(async function () {
     const tabs = await chrome.tabs.query({ currentWindow: true });
     await closeAllDuplicateTabs(tabs);
 });
