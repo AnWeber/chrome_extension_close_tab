@@ -39,6 +39,13 @@
         "mac": "Command+Shift+Right"
       },
       "description": "close all tabs with same origin"
+    },
+    "close-url-without-hash": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Up",
+        "mac": "Command+Shift+Up"
+      },
+      "description": "close all tabs with same url without hash"
     }
   },
   "icons": {

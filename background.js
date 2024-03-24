@@ -2,7 +2,10 @@
 chrome.commands.onCommand.addListener(async (command) => {
     const tabs = await chrome.tabs.query({ currentWindow: true });
     if (command === 'close-origin') {
-        await closeSameOriginTabs(tabs);
+        await closeTabsWithOrigin(tabs);
+    }
+    if (command === 'close-url-without-hash') {
+        await closeTabsWithHashlessUrl(tabs);
     }
     if (command === 'close-duplicate') {
         await closeDuplicateTabs(tabs);
@@ -12,27 +15,52 @@ chrome.commands.onCommand.addListener(async (command) => {
     }
 });
 
+let dblClickTimer = undefined;
 chrome.action.onClicked.addListener(async function () {
-    const tabs = await chrome.tabs.query({ currentWindow: true });
-    await closeAllDuplicateTabs(tabs);
+    const clearDbClickTimer = () => {
+        dblClickTimer && clearTimeout(dblClickTimer);
+        dblClickTimer = undefined;
+    }
+    if (dblClickTimer) {
+        clearDbClickTimer();
+        const tabs = await chrome.tabs.query({ currentWindow: true });
+        await closeAllDuplicateTabs(tabs);
+    } else {
+        dblClickTimer = setTimeout(async () => {
+            clearDbClickTimer();
+            const tabs = await chrome.tabs.query({ currentWindow: true });
+            await closeTabsWithHashlessUrl(tabs);
+        }, 400);
+    }
 });
 
-async function closeSameOriginTabs(tabs) {
+async function closeTabsWithOrigin(tabs) {
     const activeTab = getActiveTab(tabs);
-    const origin = getOriginOfTab(activeTab);
-    await closeTabsWithPredicate(tabs, t => getOriginOfTab(t) === origin);
+    const getOrigin = (tab) => new URL(tab.url).origin;
+    const origin = getOrigin(activeTab);
+    await closeTabsWithPredicate(tabs, t => !t.active && getOrigin(t) === origin);
+}
+
+async function closeTabsWithHashlessUrl(tabs) {
+    const activeTab = getActiveTab(tabs);
+    const getHashlessUrl = (tab) => tab.url.split("#").at(0);
+    const url = getHashlessUrl(activeTab);
+    await closeTabsWithPredicate(tabs, t => !t.active && getHashlessUrl(t) === url);
 }
 
 async function closeDuplicateTabs(tabs) {
     const activeTab = getActiveTab(tabs);
-    await closeTabsWithPredicate(tabs, t => t.id !== activeTab.id && t.url === activeTab.url);
+    await closeTabsWithPredicate(tabs, t => !t.active && t.url === activeTab.url);
 }
 
 async function closeAllDuplicateTabs(tabs) {
     let cache = {};
+    const activeTab = getActiveTab(tabs);
+    const getHashlessUrl = (tab) => tab.url.split("#").at(0);
+    const activeTabUrl = getHashlessUrl(activeTab);
     await closeTabsWithPredicate(tabs, t => {
-        const url = t.url;
-        if (cache[url]) {
+        const url = getHashlessUrl(t);
+        if (cache[url] || url === activeTabUrl && !t.active) {
             return true;
         }
         cache[url] = 1;
@@ -47,11 +75,6 @@ async function closeTabsWithPredicate(tabs, predicate) {
         }
     }
 }
-
-function getOriginOfTab(tab) {
-    return new URL(tab.url).origin;
-}
-
 
 function getActiveTab(tabs) {
     return tabs.find((tab) => tab.active)
