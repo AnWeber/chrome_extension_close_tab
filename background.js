@@ -4,11 +4,11 @@ chrome.commands.onCommand.addListener(async (command) => {
     if (command === 'close-origin') {
         await closeTabsWithOrigin(tabs);
     }
-    if (command === 'close-url-without-hash') {
-        await closeTabsWithHashlessUrl(tabs);
+    if (command === 'close-all') {
+        await closeAllTabs(tabs);
     }
     if (command === 'close-duplicate') {
-        await closeDuplicateTabs(tabs);
+        await closeTabsWithHashlessUrl(tabs);
     }
     if (command === 'close-all-duplicate') {
         await closeAllDuplicateTabs(tabs);
@@ -24,7 +24,7 @@ chrome.action.onClicked.addListener(async function () {
     if (dblClickTimer) {
         clearDbClickTimer();
         const tabs = await chrome.tabs.query({ currentWindow: true });
-        await closeAllDuplicateTabs(tabs);
+        await closeTabsWithOrigin(tabs);
     } else {
         dblClickTimer = setTimeout(async () => {
             clearDbClickTimer();
@@ -48,9 +48,8 @@ async function closeTabsWithHashlessUrl(tabs) {
     await closeTabsWithPredicate(tabs, t => !t.active && getHashlessUrl(t) === url);
 }
 
-async function closeDuplicateTabs(tabs) {
-    const activeTab = getActiveTab(tabs);
-    await closeTabsWithPredicate(tabs, t => !t.active && t.url === activeTab.url);
+async function closeAllTabs(tabs) {
+    await closeTabsWithPredicate(tabs, t => !t.active);
 }
 
 async function closeAllDuplicateTabs(tabs) {
